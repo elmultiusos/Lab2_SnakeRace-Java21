@@ -3,6 +3,7 @@
 ## Integrantes
 
 ### Juan Sebastian Buitrago Piñeros
+### Angel Nicolas Cuervo Naranjo
 
 **Escuela Colombiana de Ingeniería – Arquitecturas de Software**  
 Laboratorio de programación concurrente: condiciones de carrera, sincronización y colecciones seguras.
