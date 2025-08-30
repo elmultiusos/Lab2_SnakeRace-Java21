@@ -29,6 +29,11 @@ import co.eci.snake.core.Position;
 import co.eci.snake.core.Snake;
 import co.eci.snake.core.engine.GameClock;
 
+/**
+ * SnakeApp is the main application class that sets up the game window,
+ * initializes the game board and snakes, and handles user input for controlling
+ * the snakes and pausing/resuming the game.
+ */
 public final class SnakeApp extends JFrame {
 
     private final Board board;

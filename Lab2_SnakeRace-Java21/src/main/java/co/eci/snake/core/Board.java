@@ -8,6 +8,11 @@ import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+/**
+ * Board represents the game board, including its dimensions and the positions
+ * of mice, obstacles, turbo boosts, and teleport pairs. It provides methods to
+ * query the board state and to update it as the snake moves.
+ */
 public final class Board {
 
     private final int width;
@@ -86,19 +91,26 @@ public final class Board {
         }
     }
 
+    /**
+     * Attempts to move the snake one step in its current direction. Handles
+     * interactions with mice, obstacles, turbo boosts, and teleports.
+     *
+     * @param snake the snake to move
+     * @return the result of the move attempt
+     */
     public MoveResult step(Snake snake) {
         Objects.requireNonNull(snake, "snake");
         var head = snake.head();
         var dir = snake.direction();
         Position next = new Position(head.x() + dir.dx, head.y() + dir.dy).wrap(width, height);
 
-        // Leer obstáculos y teleports sin bloquear toda la función
+        // Read obstacles and teleports without blocking the entire function
         boolean teleported = false;
-        Position finalNext = next; // para usar dentro del bloque synchronized
+        Position finalNext = next; // to be used within the synchronized block
         boolean ateMouse = false;
         boolean ateTurbo = false;
 
-        // Lectura concurrente: verifica obstáculos y teleports
+        // Concurrent reading: checks obstacles and teleports
         lock.writeLock().lock();
         try {
             if (obstacles.contains(finalNext)) {
@@ -124,7 +136,7 @@ public final class Board {
             lock.writeLock().unlock();
         }
 
-        // Avanzar la serpiente fuera del bloqueo
+        // Advance the snake out of the blockage
         snake.advance(finalNext, ateMouse);
 
         if (ateTurbo) {
@@ -139,6 +151,12 @@ public final class Board {
         return MoveResult.MOVED;
     }
 
+    /**
+     * Creates pairs of teleport positions on the board. Each pair consists of
+     * two positions that teleport to each other.
+     *
+     * @param pairs the number of teleport pairs to create
+     */
     private void createTeleportPairs(int pairs) {
         for (int i = 0; i < pairs; i++) {
             Position a = randomEmpty();
@@ -148,6 +166,12 @@ public final class Board {
         }
     }
 
+    /**
+     * Generates a random empty position on the board that is not occupied by
+     * mice, obstacles, turbo boosts, or teleports.
+     *
+     * @return a random empty position
+     */
     private Position randomEmpty() {
         var rnd = ThreadLocalRandom.current();
         Position p;
