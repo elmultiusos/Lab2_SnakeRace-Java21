@@ -87,27 +87,31 @@ public final class Board {
     }
 
     public MoveResult step(Snake snake) {
+        Objects.requireNonNull(snake, "snake");
+        var head = snake.head();
+        var dir = snake.direction();
+        Position next = new Position(head.x() + dir.dx, head.y() + dir.dy).wrap(width, height);
+
+        // Leer obstáculos y teleports sin bloquear toda la función
+        boolean teleported = false;
+        Position finalNext = next; // para usar dentro del bloque synchronized
+        boolean ateMouse = false;
+        boolean ateTurbo = false;
+
+        // Lectura concurrente: verifica obstáculos y teleports
         lock.writeLock().lock();
         try {
-            Objects.requireNonNull(snake, "snake");
-            var head = snake.head();
-            var dir = snake.direction();
-            Position next = new Position(head.x() + dir.dx, head.y() + dir.dy).wrap(width, height);
-
-            if (obstacles.contains(next)) {
+            if (obstacles.contains(finalNext)) {
                 return MoveResult.HIT_OBSTACLE;
             }
 
-            boolean teleported = false;
-            if (teleports.containsKey(next)) {
-                next = teleports.get(next);
+            if (teleports.containsKey(finalNext)) {
+                finalNext = teleports.get(finalNext);
                 teleported = true;
             }
 
-            boolean ateMouse = mice.remove(next);
-            boolean ateTurbo = turbo.remove(next);
-
-            snake.advance(next, ateMouse);
+            ateMouse = mice.remove(finalNext);
+            ateTurbo = turbo.remove(finalNext);
 
             if (ateMouse) {
                 mice.add(randomEmpty());
@@ -116,20 +120,23 @@ public final class Board {
                     turbo.add(randomEmpty());
                 }
             }
-
-            if (ateTurbo) {
-                return MoveResult.ATE_TURBO;
-            }
-            if (ateMouse) {
-                return MoveResult.ATE_MOUSE;
-            }
-            if (teleported) {
-                return MoveResult.TELEPORTED;
-            }
-            return MoveResult.MOVED;
         } finally {
             lock.writeLock().unlock();
         }
+
+        // Avanzar la serpiente fuera del bloqueo
+        snake.advance(finalNext, ateMouse);
+
+        if (ateTurbo) {
+            return MoveResult.ATE_TURBO;
+        }
+        if (ateMouse) {
+            return MoveResult.ATE_MOUSE;
+        }
+        if (teleported) {
+            return MoveResult.TELEPORTED;
+        }
+        return MoveResult.MOVED;
     }
 
     private void createTeleportPairs(int pairs) {
